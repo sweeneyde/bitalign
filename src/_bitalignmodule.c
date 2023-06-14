@@ -189,14 +189,14 @@ If more than one shift is optimal, the negative-most shift is used.\
 ");
 
 static PyMethodDef bitalign_methods[] = {
-    {"bitalign_8_lsb", _PyCFunction_CAST(bitalign_8_lsb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_16_lsb", _PyCFunction_CAST(bitalign_16_lsb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_32_lsb", _PyCFunction_CAST(bitalign_32_lsb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_64_lsb", _PyCFunction_CAST(bitalign_64_lsb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_8_msb", _PyCFunction_CAST(bitalign_8_msb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_16_msb", _PyCFunction_CAST(bitalign_16_msb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_32_msb", _PyCFunction_CAST(bitalign_32_msb), METH_FASTCALL, bitalign_doc},
-    {"bitalign_64_msb", _PyCFunction_CAST(bitalign_64_msb), METH_FASTCALL, bitalign_doc},
+    {"bitalign_8_lsb",  (PyCFunction)bitalign_8_lsb,  METH_FASTCALL, bitalign_doc},
+    {"bitalign_16_lsb", (PyCFunction)bitalign_16_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_32_lsb", (PyCFunction)bitalign_32_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_64_lsb", (PyCFunction)bitalign_64_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_8_msb",  (PyCFunction)bitalign_8_msb,  METH_FASTCALL, bitalign_doc},
+    {"bitalign_16_msb", (PyCFunction)bitalign_16_msb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_32_msb", (PyCFunction)bitalign_32_msb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_64_msb", (PyCFunction)bitalign_64_msb, METH_FASTCALL, bitalign_doc},
     {NULL, NULL}
 };
 
