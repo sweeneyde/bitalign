@@ -163,21 +163,21 @@ bitalign_free(void *module)
 }
 
 PyDoc_STRVAR(bitalign_doc,"\
-bitalign_#_???(a : arr1, b : arr2) --> (shift_by, num_common_bits);\n\
+bitalign_#_???(arr1, arr2) --> (shift_by, num_common_bits);\n\
 \n\
 Return a tuple (x, y) such that when arr1 is shifted by x bits,\n\
 the number of bits in common between arr1 and arr2 is y.\n\
 \n\
-Positive shifts indicate that buffer1 needs to be shifted toward the back:\n\
+Positive shifts indicate that arr1 needs to be shifted toward the back:\n\
 \n\
-    buffer1 =                    -->  0001001011111111  -->\n\
-    buffer2 =                    1111100010010111\n\
+    arr1 =                    -->  0001001011111111  -->\n\
+    arr2 =                    1111100010010111\n\
     gives (shift_by=5, num_common_bits=11)\n\
 \n\
-Negative shifts indicate that buffer1 needs to be shifted toward the front:\n\
+Negative shifts indicate that arr1 needs to be shifted toward the front:\n\
 \n\
-    buffer1 =          <--  1111100010010111  <--\n\
-    buffer2 =                    0001001011111111\n\
+    arr1 =          <--  1111100010010111  <--\n\
+    arr2 =                    0001001011111111\n\
     gives (shift_by=-5, num_common_bits=11)\n\
 \n\
 The number (8, 16, 32, or 64) in the function name the number of bits\n\
