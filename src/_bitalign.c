@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "./bitalign.h"
-#include "./popcount_impl.h"
+#include "./_bitalign.h"
+#include "./_popcount_impl.h"
 
 // LSB Stored first --------------------------------------------------
 
@@ -18,7 +18,7 @@
 #define WORD_BIT       8
 #define POPCNT(x)      popcount8(x)
 #define WORD_MAX       UINT8_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -30,7 +30,7 @@
 #define WORD_BIT       16
 #define POPCNT(x)      popcount16(x)
 #define WORD_MAX       UINT16_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -42,7 +42,7 @@
 #define WORD_BIT       32
 #define POPCNT(x)      popcount32(x)
 #define WORD_MAX       UINT32_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -54,7 +54,7 @@
 #define WORD_BIT       64
 #define POPCNT(x)      popcount64(x)
 #define WORD_MAX       UINT64_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -75,7 +75,7 @@
 #define WORD_BIT       8
 #define POPCNT(x)      popcount8(x)
 #define WORD_MAX       UINT8_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -87,7 +87,7 @@
 #define WORD_BIT       16
 #define POPCNT(x)      popcount16(x)
 #define WORD_MAX       UINT16_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -99,7 +99,7 @@
 #define WORD_BIT       32
 #define POPCNT(x)      popcount32(x)
 #define WORD_MAX       UINT32_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT
@@ -111,7 +111,7 @@
 #define WORD_BIT       64
 #define POPCNT(x)      popcount64(x)
 #define WORD_MAX       UINT64_MAX
-#include "./bitalign_impl.h"
+#include "./_bitalign_impl.h"
 #undef MANGLE
 #undef WORD
 #undef WORD_BIT

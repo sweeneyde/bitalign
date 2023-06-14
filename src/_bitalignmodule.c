@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "./bitalign.h"
+#include "./_bitalign.h"
 
 typedef struct {
     void *freeblock;
@@ -19,7 +19,7 @@ allocate_buffer(bitalign_module_state *state, size_t size)
     return PyMem_Malloc(size);
 }
 
-static void *
+static void
 free_buffer(bitalign_module_state *state, void *block, size_t size)
 {
     assert(block != NULL);
@@ -202,7 +202,7 @@ static PyMethodDef bitalign_methods[] = {
 
 PyDoc_STRVAR(module_doc, "some kind of module");
 
-static struct PyModuleDef bitalignmodule = {
+static struct PyModuleDef _bitalignmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "bitalign",
     .m_doc = module_doc,
@@ -213,7 +213,7 @@ static struct PyModuleDef bitalignmodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_bitalign(void)
+PyInit__bitalign(void)
 {
-    return PyModuleDef_Init(&bitalignmodule);
+    return PyModuleDef_Init(&_bitalignmodule);
 }
