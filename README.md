@@ -2,6 +2,8 @@
 
 *Given two strings of bits, find how to best align them so that they have the most bits in common.*
 
+## Installation: `pip install bitalign`
+
 ## Examples
 
 The following snippets show a conceptual string of 16 bits `A = "0001001011111111"`
