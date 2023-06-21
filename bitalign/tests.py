@@ -171,7 +171,7 @@ class BitAlignTest(unittest.TestCase):
                 for b in arr:
                     self.check_8bit(a, b)
 
-    def test_8bit(self):
+    def test_8bit_random(self):
         for _ in range(10):
             for N in range(8, 11*8, 8):
                 self.check_8bit(self.randstring(N), self.randstring(N))
@@ -213,9 +213,6 @@ class BitAlignTest(unittest.TestCase):
                 self.check_64bit(self.randstring(N), self.randstring(N))
 
     def check_all(self, string1, string2):
-        # The pure-python algorithm is slow, so just check that the
-        # different methods agree
-        # ref = self.reference_algorithm(string1, string2)
         s2a = self.string_to_array
         res1 = bitalign_8_lsb(s2a(string1, 8, 'lsb'), s2a(string2, 8, 'lsb'))
         res2 = bitalign_16_lsb(s2a(string1, 16, 'lsb'), s2a(string2, 16, 'lsb'))
@@ -225,15 +222,19 @@ class BitAlignTest(unittest.TestCase):
         res6 = bitalign_16_msb(s2a(string1, 16, 'msb'), s2a(string2, 16, 'msb'))
         res7 = bitalign_32_msb(s2a(string1, 32, 'msb'), s2a(string2, 32, 'msb'))
         res8 = bitalign_64_msb(s2a(string1, 64, 'msb'), s2a(string2, 64, 'msb'))
+        # The pure-python algorithm is slow, so just check that the
+        # different methods agree
+        # ref = self.reference_algorithm(string1, string2)
+        ref = res1
         msg = (string1, string2)
-        self.assertEqual(res1, res1, msg=msg)
-        self.assertEqual(res2, res1, msg=msg)
-        self.assertEqual(res3, res1, msg=msg)
-        self.assertEqual(res4, res1, msg=msg)
-        self.assertEqual(res5, res1, msg=msg)
-        self.assertEqual(res6, res1, msg=msg)
-        self.assertEqual(res7, res1, msg=msg)
-        self.assertEqual(res8, res1, msg=msg)
+        self.assertEqual(res1, ref, msg=msg)
+        self.assertEqual(res2, ref, msg=msg)
+        self.assertEqual(res3, ref, msg=msg)
+        self.assertEqual(res4, ref, msg=msg)
+        self.assertEqual(res5, ref, msg=msg)
+        self.assertEqual(res6, ref, msg=msg)
+        self.assertEqual(res7, ref, msg=msg)
+        self.assertEqual(res8, ref, msg=msg)
 
     def test_random_all(self):
         for _ in range(5000):
