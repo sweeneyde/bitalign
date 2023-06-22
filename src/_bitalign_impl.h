@@ -16,12 +16,11 @@ MANGLE(do_shift)(WORD *buf, int len)
 }
 
 #define UPDATE_RESULT(COMMON, SHIFT) do {                          \
-    int _common = (COMMON);                                        \
     if (0) {printf("%d-->%d\n", (SHIFT), (COMMON));}               \
-    if (_common >= res.common_bits) {                              \
+    if ((COMMON) >= res.common_bits) {                             \
         int _shift = (SHIFT);                                      \
-        if (_common > res.common_bits || _shift < res.shift_by) {  \
-            res.common_bits = _common;                             \
+        if ((COMMON) > res.common_bits || _shift < res.shift_by) { \
+            res.common_bits = (COMMON);                            \
             res.shift_by = _shift;                                 \
         }                                                          \
     }                                                              \
@@ -102,7 +101,6 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
             for (; ai < N; ai++, bi++) {
                 common -= POPCNT(buffer[ai] ^ b[bi]);
             }
-            // now add in the partial word
             UPDATE_RESULT(common, (-WORD_BIT) * a_start + iteration);
         }
     }
