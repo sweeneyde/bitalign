@@ -39,19 +39,21 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
     buffer[N] = 0;
     {
         // Iteration 0: No bit-shifts yet. Buffer has N words.
-        for (int b_start = 0; b_start < N; b_start++) {
+        int overlap = N * WORD_BIT;
+        for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
             // compare buffer[0:N-b_start] to b[b_start:N]
             int bi = b_start, ai = 0;
-            int common = (N - b_start) * WORD_BIT;
+            int common = overlap;
             for (; bi < N; ai++, bi++) {
                 common -= POPCNT(buffer[ai] ^ b[bi]);
             }
             UPDATE_RESULT(common, WORD_BIT * b_start);
         }
-        for (int a_start = 1; a_start < N; a_start++) {
+        overlap = (N - 1) * WORD_BIT;
+        for (int a_start = 1; a_start < N; a_start++, overlap -= WORD_BIT) {
             // compare buffer[a_start:N] to b[0:N-a_start]
             int ai = a_start, bi = 0;
-            int common = (N - a_start) * WORD_BIT;
+            int common = overlap;
             for (; ai < N; ai++, bi++) {
                 common -= POPCNT(buffer[ai] ^ b[bi]);
             }
@@ -63,11 +65,12 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
     for (int iteration = 1; iteration < WORD_BIT; iteration++) {
         MANGLE(do_shift)(buffer, N + 1);
         WORD a0mask = SHIFT_FORWARD(WORD_MAX, iteration);
-        for (int b_start = 0; b_start < N; b_start++) {
+        int overlap = (N - 1) * WORD_BIT + WORD_BIT - iteration;
+        for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
             // compare buffer[0:N-b_start] to b[b_start:N]
-            int common = (N - b_start - 1) * WORD_BIT;
+            int common = overlap;
             // buffer[0] is only partially present
-            common += POPCNT(a0mask & ~(buffer[0] ^ b[b_start]));
+            common -= POPCNT(a0mask & (buffer[0] ^ b[b_start]));
             // now the rest: buffer[1:N-b_start] to b[b_start+1:N]
             int ai = 1, bi = b_start + 1;
             for (; bi < N; ai++, bi++) {
@@ -76,11 +79,12 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
             UPDATE_RESULT(common, (WORD_BIT) * b_start + iteration);
         }
         WORD aNmask = (WORD)~a0mask;
-        for (int a_start = 1; a_start <= N; a_start++) {
+        overlap = (N - 1) * WORD_BIT + iteration;
+        for (int a_start = 1; a_start <= N; a_start++, overlap -= WORD_BIT) {
             // only compare buffer[a_start:N] to b[0:N-a_start]
-            int common = (N - a_start) * WORD_BIT;
+            int common = overlap;
             // buffer[N] is only partially present:
-            common += POPCNT(aNmask & ~(b[N-a_start] ^ buffer[N]));
+            common -= POPCNT(aNmask & (b[N-a_start] ^ buffer[N]));
             // now the rest: buffer[a_start:N+1] with b[0:N+1-a_start]
             int ai = a_start, bi = 0;
             for (; ai < N; ai++, bi++) {
