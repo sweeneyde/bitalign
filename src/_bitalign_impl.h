@@ -41,6 +41,9 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         // Iteration 0: No bit-shifts yet. Buffer has N words.
         int overlap = N * WORD_BIT;
         for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
+            if (overlap < res.common_bits) {
+                break;
+            }
             // compare buffer[0:N-b_start] to b[b_start:N]
             int bi = b_start, ai = 0;
             int common = overlap;
@@ -51,6 +54,9 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         }
         overlap = (N - 1) * WORD_BIT;
         for (int a_start = 1; a_start < N; a_start++, overlap -= WORD_BIT) {
+            if (overlap < res.common_bits) {
+                break;
+            }
             // compare buffer[a_start:N] to b[0:N-a_start]
             int ai = a_start, bi = 0;
             int common = overlap;
@@ -67,6 +73,9 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         WORD a0mask = SHIFT_FORWARD(WORD_MAX, iteration);
         int overlap = (N - 1) * WORD_BIT + WORD_BIT - iteration;
         for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
+            if (overlap < res.common_bits) {
+                break;
+            }
             // compare buffer[0:N-b_start] to b[b_start:N]
             int common = overlap;
             // buffer[0] is only partially present
@@ -81,6 +90,9 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         WORD aNmask = (WORD)~a0mask;
         overlap = (N - 1) * WORD_BIT + iteration;
         for (int a_start = 1; a_start <= N; a_start++, overlap -= WORD_BIT) {
+            if (overlap < res.common_bits) {
+                break;
+            }
             // only compare buffer[a_start:N] to b[0:N-a_start]
             int common = overlap;
             // buffer[N] is only partially present:
