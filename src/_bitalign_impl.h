@@ -42,22 +42,20 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         for (int b_start = 0; b_start < N; b_start++) {
             // compare buffer[0:N-b_start] to b[b_start:N]
             int bi = b_start, ai = 0;
-            int diff = 0;
+            int common = (N - b_start) * WORD_BIT;
             for (; bi < N; ai++, bi++) {
-                diff += POPCNT(buffer[ai] ^ b[bi]);
+                common -= POPCNT(buffer[ai] ^ b[bi]);
             }
-            UPDATE_RESULT((N - b_start) * WORD_BIT - diff,\
-                          WORD_BIT * b_start);
+            UPDATE_RESULT(common, WORD_BIT * b_start);
         }
         for (int a_start = 1; a_start < N; a_start++) {
             // compare buffer[a_start:N] to b[0:N-a_start]
             int ai = a_start, bi = 0;
-            int diff = 0;
+            int common = (N - a_start) * WORD_BIT;
             for (; ai < N; ai++, bi++) {
-                diff += POPCNT(buffer[ai] ^ b[bi]);
+                common -= POPCNT(buffer[ai] ^ b[bi]);
             }
-            UPDATE_RESULT((N - a_start) * WORD_BIT - diff,\
-                          (-WORD_BIT) * a_start);
+            UPDATE_RESULT(common, (-WORD_BIT) * a_start);
         }
     }
     // Remaining Iterations: now buffer has N+1 words.
@@ -67,31 +65,28 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
         WORD a0mask = SHIFT_FORWARD(WORD_MAX, iteration);
         for (int b_start = 0; b_start < N; b_start++) {
             // compare buffer[0:N-b_start] to b[b_start:N]
-            // buffer[0] is only partially present, so first
-            // only compare buffer[1:N-b_start] to b[b_start+1:N]
-            int ai = 1, bi = b_start + 1;
-            int diff = 0;
-            for (; bi < N; ai++, bi++) {
-                diff += POPCNT(buffer[ai] ^ b[bi]);
-            }
-            int common = (N - b_start - 1) * WORD_BIT - diff;
-            // now add in the partial word
+            int common = (N - b_start - 1) * WORD_BIT;
+            // buffer[0] is only partially present
             common += POPCNT(a0mask & ~(buffer[0] ^ b[b_start]));
+            // now the rest: buffer[1:N-b_start] to b[b_start+1:N]
+            int ai = 1, bi = b_start + 1;
+            for (; bi < N; ai++, bi++) {
+                common -= POPCNT(buffer[ai] ^ b[bi]);
+            }
             UPDATE_RESULT(common, (WORD_BIT) * b_start + iteration);
         }
         WORD aNmask = (WORD)~a0mask;
         for (int a_start = 1; a_start <= N; a_start++) {
-            // compare buffer[a_start:N+1] with b[0:N+1-a_start]
-            // buffer[N] is only partially present, so first
             // only compare buffer[a_start:N] to b[0:N-a_start]
-            int ai = a_start, bi = 0;
-            int diff = 0;
-            for (; ai < N; ai++, bi++) {
-                diff += POPCNT(buffer[ai] ^ b[bi]);
-            }
-            int common = (N - a_start) * WORD_BIT - diff;
-            // now add in the partial word
+            int common = (N - a_start) * WORD_BIT;
+            // buffer[N] is only partially present:
             common += POPCNT(aNmask & ~(b[N-a_start] ^ buffer[N]));
+            // now the rest: buffer[a_start:N+1] with b[0:N+1-a_start]
+            int ai = a_start, bi = 0;
+            for (; ai < N; ai++, bi++) {
+                common -= POPCNT(buffer[ai] ^ b[bi]);
+            }
+            // now add in the partial word
             UPDATE_RESULT(common, (-WORD_BIT) * a_start + iteration);
         }
     }
