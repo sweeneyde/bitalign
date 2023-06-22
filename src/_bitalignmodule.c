@@ -22,7 +22,9 @@ allocate_buffer(bitalign_module_state *state, size_t size)
 static void
 free_buffer(bitalign_module_state *state, void *block, size_t size)
 {
-    assert(block != NULL);
+    if (block == NULL) {
+        return;
+    }
     void *oldblock = state->freeblock;
     state->freeblock = block;
     state->size = size;
@@ -42,6 +44,12 @@ bitalign_clear(PyObject *module)
         PyMem_Free(block);
     }
     return 0;
+}
+
+static PyObject*
+to_pair(struct bitalign_result res)
+{
+    return Py_BuildValue("(ii)", res.shift_by, res.common_bits);
 }
 
 typedef struct bitalign_result (*implfunc)(void *, void *, int, void *);
@@ -95,10 +103,10 @@ bitalign_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     struct bitalign_result res = func(a.buf, b.buf, N, buffer);
     PyBuffer_Release(&a);
     PyBuffer_Release(&b);
-    free_buffer(state, buffer, N + 1);
-    return Py_BuildValue("(ii)", res.shift_by, res.common_bits);
-
+    free_buffer(state, buffer, (N + 1) * itemsize);
+    return to_pair(res);
 }
+
 
 static PyObject *
 bitalign_8_lsb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
@@ -156,6 +164,174 @@ bitalign_64_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                            sizeof(uint64_t), bitalign_impl_64msb);
 }
 
+typedef void (*implfunc_multi)(void *, void *, size_t, int, void *, struct bitalign_result *);
+
+static PyObject *
+bitalign_multi_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
+                      int itemsize, implfunc_multi func)
+{
+    Py_buffer a;
+    PyObject *b_tuple = NULL;
+    Py_buffer *pybuffers = NULL;
+    void **b_bufs = NULL;
+    int num_pybuffers = 0;
+    PyObject *res = NULL;
+    void *work_buffer = NULL;
+    struct bitalign_result *result_buffer = NULL;
+    PyObject *result_list = NULL;
+
+    bitalign_module_state *state = PyModule_GetState(self);
+    assert(state != NULL);
+    if (nargs != 2) {
+        PyErr_SetString(PyExc_TypeError,
+                        "bitalign_#_xxx_multi expected 2 arguments.");
+        return NULL;
+    }
+    if (!PyList_Check(args[1]) && !PyTuple_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+            "bitalign_#_xxx_multi argument 2 must be a list or tuple.");
+        return NULL;
+    }
+    if (PyObject_GetBuffer(args[0], &a, PyBUF_ND) < 0) {
+        return NULL;
+        // From now on, use "goto done"
+    }
+    if (a.len <= 0) {
+        PyErr_SetString(PyExc_ValueError, "Buffer cannot be empty.");
+        goto done;
+    }
+    if (a.len >= INT_MAX / CHAR_BIT / 2 / itemsize) {
+        PyErr_SetString(PyExc_OverflowError, "Buffer is too large.");
+        goto done;
+    }
+    b_tuple = PySequence_Tuple(args[1]);
+    if (b_tuple == NULL) {
+        goto done;
+    }
+    size_t M = PyTuple_GET_SIZE(b_tuple);
+    pybuffers = PyMem_New(Py_buffer, M);
+    if (pybuffers == NULL) {
+        goto done;
+    }
+    b_bufs = PyMem_New(void *, M);
+    if (b_bufs == NULL) {
+        goto done;
+    }
+    for (; num_pybuffers < M; num_pybuffers++) {
+        PyObject *b_obj = PyTuple_GET_ITEM(b_tuple, num_pybuffers);
+        Py_buffer *last = &pybuffers[num_pybuffers];
+        if (PyObject_GetBuffer(b_obj, last, PyBUF_ND) < 0) {
+            goto done;
+        }
+        if (last->len != a.len) {
+            PyBuffer_Release(last);
+            PyErr_SetString(PyExc_ValueError,
+                            "Buffers must have the same length");
+            goto done;
+        }
+        if (last->itemsize != a.itemsize) {
+            PyBuffer_Release(last);
+            PyErr_SetString(PyExc_ValueError,
+                            "Buffers have incorrect itemsize");
+            goto done;
+        }
+        b_bufs[num_pybuffers] = last->buf;
+    }
+    int N = (int)(a.len / itemsize);
+    work_buffer = allocate_buffer(state, (N + 1) * itemsize);
+    if (work_buffer == NULL) {
+        goto done;
+    }
+    result_buffer = PyMem_New(struct bitalign_result, M);
+    if (result_buffer == NULL) {
+        goto done;
+    }
+    func(a.buf, b_bufs, M, N, work_buffer, result_buffer);
+    result_list = PyList_New(M);
+    if (result_list == NULL) {
+        goto done;
+    }
+    for (size_t j = 0; j < M; j++) {
+        PyObject *tup = to_pair(result_buffer[j]);
+        if (tup == NULL) {
+            goto done;
+        }
+        PyList_SET_ITEM(result_list, j, tup);
+    }
+    res = result_list;
+    Py_INCREF(res);
+done:
+    Py_XDECREF(result_list);
+    PyMem_Free(b_bufs);
+    PyMem_Free(result_buffer);
+    free_buffer(state, work_buffer, (N + 1) * itemsize);
+    if (pybuffers) {
+        for (int k = num_pybuffers - 1; k >= 0; k--) {
+            PyBuffer_Release(&pybuffers[k]);
+        }
+        PyMem_Free(pybuffers);
+    }
+    Py_XDECREF(b_tuple);
+    PyBuffer_Release(&a);
+    return res;
+}
+
+static PyObject *
+bitalign_multi_8_lsb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint8_t),
+                                 bitalign_multi_impl_8lsb);
+}
+
+static PyObject *
+bitalign_multi_16_lsb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint16_t),
+                                 bitalign_multi_impl_16lsb);
+}
+
+static PyObject *
+bitalign_multi_32_lsb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint32_t),
+                                 bitalign_multi_impl_32lsb);
+}
+
+static PyObject *
+bitalign_multi_64_lsb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint64_t),
+                                 bitalign_multi_impl_64lsb);
+}
+
+static PyObject *
+bitalign_multi_8_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint8_t),
+                                 bitalign_multi_impl_8msb);
+}
+
+static PyObject *
+bitalign_multi_16_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint16_t),
+                                 bitalign_multi_impl_16msb);
+}
+
+static PyObject *
+bitalign_multi_32_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint32_t),
+                                 bitalign_multi_impl_32msb);
+}
+
+static PyObject *
+bitalign_multi_64_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    return bitalign_multi_helper(self, args, nargs, sizeof(uint64_t),
+                                 bitalign_multi_impl_64msb);
+}
+
 static void
 bitalign_free(void *module)
 {
@@ -197,6 +373,14 @@ static PyMethodDef bitalign_methods[] = {
     {"bitalign_16_msb", (PyCFunction)bitalign_16_msb, METH_FASTCALL, bitalign_doc},
     {"bitalign_32_msb", (PyCFunction)bitalign_32_msb, METH_FASTCALL, bitalign_doc},
     {"bitalign_64_msb", (PyCFunction)bitalign_64_msb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_8_lsb",  (PyCFunction)bitalign_multi_8_lsb,  METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_16_lsb", (PyCFunction)bitalign_multi_16_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_32_lsb", (PyCFunction)bitalign_multi_32_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_64_lsb", (PyCFunction)bitalign_multi_64_lsb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_8_msb",  (PyCFunction)bitalign_multi_8_msb,  METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_16_msb", (PyCFunction)bitalign_multi_16_msb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_32_msb", (PyCFunction)bitalign_multi_32_msb, METH_FASTCALL, bitalign_doc},
+    {"bitalign_multi_64_msb", (PyCFunction)bitalign_multi_64_msb, METH_FASTCALL, bitalign_doc},
     {NULL, NULL}
 };
 
