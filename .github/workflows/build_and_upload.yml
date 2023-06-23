@@ -2,7 +2,9 @@ name: Build and Upload
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
+      - build_and_upload
   release:
     types:
       - published
