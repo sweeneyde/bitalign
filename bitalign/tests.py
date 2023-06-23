@@ -265,7 +265,7 @@ class BitAlignAPITest(unittest.TestCase):
                 f(a)
             with self.assertRaisesRegex(TypeError, "expected 2 arguments"):
                 f(a, a, a)
-            with self.assertRaisesRegex(TypeError, "keyword"):
+            with self.assertRaisesRegex(TypeError, "arguments"):
                 f(a=a, b=a)
 
     def test_not_contiguous(self):
