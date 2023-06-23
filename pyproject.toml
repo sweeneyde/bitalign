@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=59.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+test-command = "python -m bitalign.tests"
 
 [project]
 name = "bitalign"
