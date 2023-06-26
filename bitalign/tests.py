@@ -27,7 +27,7 @@ class BitAlignTest(unittest.TestCase):
 
         (x, y) = bitalign_8_msb(bytes([0b1111_1111, 0b1111_1111]),
                                 bytes([0b0000_0000, 0b0000_0000]))
-        self.assertEqual((x, y), (-15, 0))
+        self.assertEqual((x, y), (-16, 0))
 
         (x, y) = bitalign_8_msb(bytes([0b1111_0000, 0b0000_0000]),
                                 bytes([0b0000_1111, 0b0000_0000]))
@@ -56,7 +56,7 @@ class BitAlignTest(unittest.TestCase):
 
         (x, y) = bitalign_16_msb(array.array('H', [0xffff, 0xffff]),
                                  array.array('H', [0x0000, 0x0000]))
-        self.assertEqual((x, y), (-31, 0))
+        self.assertEqual((x, y), (-32, 0))
 
         (x, y) = bitalign_16_msb(array.array('H', [0xffff, 0x0000]),
                                  array.array('H', [0x0000, 0xffff]))
@@ -67,7 +67,7 @@ class BitAlignTest(unittest.TestCase):
         self.assertEqual(len(B), N)
         self.assertNotEqual(N, 0)
         shift_by, common_bits = None, -1
-        for a_start in reversed(range(N)):
+        for a_start in reversed(range(N+1)):
             c = sum(map(operator.eq, A[a_start:], B))
             if c > common_bits:
                 shift_by, common_bits = -a_start, c
@@ -81,7 +81,7 @@ class BitAlignTest(unittest.TestCase):
         # Same test cases as above.
         r = self.reference_algorithm
         self.assertEqual(r("1111111111111111", "1111111111111111"), (0, 16))
-        self.assertEqual(r("1111111111111111", "0000000000000000"), (-15, 0))
+        self.assertEqual(r("1111111111111111", "0000000000000000"), (-16, 0))
         self.assertEqual(r("1111000000000000", "0000111100000000"), (4, 12))
         self.assertEqual(r("1001001000100101", "0110001001111100"), (-4, 10))
         self.assertEqual(r("11011110", "10110100"), (-1, 6))
