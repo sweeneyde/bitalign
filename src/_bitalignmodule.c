@@ -118,7 +118,7 @@ bitalign_free(void *module)
 }
 
 PyDoc_STRVAR(bitalign_doc,"\
-bitalign_#_???(arr1, arr2) --> (shift_by, num_common_bits);\n\
+bitalign_#_?sb(arr1, arr2) --> (shift_by, num_common_bits);\n\
 \n\
 Return a tuple (x, y) such that when arr1 is shifted by x bits,\n\
 the number of bits in common between arr1 and arr2 is y.\n\
@@ -140,7 +140,9 @@ that must be in each array entry.  'lsb'/'msb' indicates whether the\n\
 0th bit of each logical bit-array is to be stored in the least or most\n\
 significant bit of arr[0].\n\
 \n\
-If more than one shift is optimal, the negative-most shift is used.\
+If more than one shift is optimal, the negative-most shift is used.\n\
+If there are no bits in common (i.e., all zeros with all ones),\n\
+then (-num_bits, 0) is returned.\
 ");
 
 static PyMethodDef bitalign_methods[] = {

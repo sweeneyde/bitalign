@@ -73,7 +73,7 @@ from bitalign import (
 ```
 
 ```
-    bitalign_#_???(arr1, arr2) --> (shift_by, num_common_bits);
+    bitalign_#_?sb(arr1, arr2) --> (shift_by, num_common_bits);
 
     Return a tuple (x, y) such that when arr1 is shifted by x bits,
     the number of bits in common between arr1 and arr2 is y.
@@ -96,4 +96,6 @@ from bitalign import (
     significant bit of arr[0].
 
     If more than one shift is optimal, the negative-most shift is used.
+    If there are no bits in common (i.e., all zeros with all ones),
+    then (-num_bits, 0) is returned.
 ```
