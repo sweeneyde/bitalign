@@ -36,39 +36,12 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
     assert(N < INT_MAX / WORD_BIT / 2);
     memcpy(buffer, a, N * sizeof(WORD));
     buffer[N] = 0;
-    {
-        // Iteration 0: No bit-shifts yet. Buffer has N words.
-        int overlap = N * WORD_BIT;
-        for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
-            if (overlap < res.common_bits) {
-                break;
-            }
-            // compare buffer[0:N-b_start] to b[b_start:N]
-            int bi = b_start, ai = 0;
-            int common = overlap;
-            for (; bi < N; ai++, bi++) {
-                common -= POPCNT(buffer[ai] ^ b[bi]);
-            }
-            UPDATE_RESULT(common, WORD_BIT * b_start);
-        }
-        overlap = (N - 1) * WORD_BIT;
-        for (int a_start = 1; a_start < N; a_start++, overlap -= WORD_BIT) {
-            if (overlap < res.common_bits) {
-                break;
-            }
-            // compare buffer[a_start:N] to b[0:N-a_start]
-            int ai = a_start, bi = 0;
-            int common = overlap;
-            for (; ai < N; ai++, bi++) {
-                common -= POPCNT(buffer[ai] ^ b[bi]);
-            }
-            UPDATE_RESULT(common, (-WORD_BIT) * a_start);
-        }
-    }
     // Remaining Iterations: now buffer has N+1 words.
     // buffer[0] and buffer[N] are only partial words.
-    for (int iteration = 1; iteration < WORD_BIT; iteration++) {
-        MANGLE(do_shift)(buffer, N + 1);
+    for (int iteration = 0; iteration < WORD_BIT; iteration++) {
+        if (iteration > 0) {
+            MANGLE(do_shift)(buffer, N + 1);
+        }
         WORD a0mask = SHIFT_FORWARD(WORD_MAX, iteration);
         int overlap = (N - 1) * WORD_BIT + WORD_BIT - iteration;
         for (int b_start = 0; b_start < N; b_start++, overlap -= WORD_BIT) {
