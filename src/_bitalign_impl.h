@@ -4,6 +4,52 @@
 #error "bitalign.h included incorrectly."
 #endif
 
+/*
+Implementation strategy:
+To avoid having to shift the "a" buffer by one bit at every step, do
+everything we can with that shift position, and only then shift it by
+one bit.
+
+For an example, suppose we had 4-bit words, and we wanted to
+compare a pair of 12 bit strings.
+
+  iteration=0:
+  buffer:               aaaa aaaa aaaa ____
+  b_start=0             bbbb bbbb bbbb                 shift_by=0
+  b_start=1        bbbb bbbb bbbb                      shift_by=4
+  b_start=2   bbbb bbbb bbbb                           shift_by=8
+  a_start=1                  bbbb bbbb bbbb            shift_by=-4
+  a_start=2                       bbbb bbbb bbbb       shift_by=-8
+  a_start=3                            bbbb bbbb bbbb  shift_by=-12
+
+  iteration=1:
+  buffer:               _aaa aaaa aaaa a___
+  b_start=0             bbbb bbbb bbbb                 shift_by=1
+  b_start=1        bbbb bbbb bbbb                      shift_by=5
+  b_start=2   bbbb bbbb bbbb                           shift_by=9
+  a_start=1                  bbbb bbbb bbbb            shift_by=-3
+  a_start=2                       bbbb bbbb bbbb       shift_by=-7
+  a_start=3                            bbbb bbbb bbbb  shift_by=-11
+
+  iteration=2:
+  buffer:               __aa aaaa aaaa aa__
+  b_start=0             bbbb bbbb bbbb                 shift_by=2
+  b_start=1        bbbb bbbb bbbb                      shift_by=6
+  b_start=2   bbbb bbbb bbbb                           shift_by=10
+  a_start=1                  bbbb bbbb bbbb            shift_by=-2
+  a_start=2                       bbbb bbbb bbbb       shift_by=-6
+  a_start=3                            bbbb bbbb bbbb  shift_by=-10
+
+  iteration=3:
+  buffer:               ___a aaaa aaaa aaa_
+  b_start=0             bbbb bbbb bbbb                 shift_by=3
+  b_start=1        bbbb bbbb bbbb                      shift_by=7
+  b_start=2   bbbb bbbb bbbb                           shift_by=11
+  a_start=1                  bbbb bbbb bbbb            shift_by=-1
+  a_start=2                       bbbb bbbb bbbb       shift_by=-5
+  a_start=3                            bbbb bbbb bbbb  shift_by=-9
+*/
+
 static void
 MANGLE(do_shift)(WORD *buf, int len)
 {
@@ -36,8 +82,6 @@ MANGLE(bitalign_impl)(const WORD *a, const WORD *b, int N, WORD *buffer)
     assert(N < INT_MAX / WORD_BIT / 2);
     memcpy(buffer, a, N * sizeof(WORD));
     buffer[N] = 0;
-    // Remaining Iterations: now buffer has N+1 words.
-    // buffer[0] and buffer[N] are only partial words.
     for (int iteration = 0; iteration < WORD_BIT; iteration++) {
         if (iteration > 0) {
             MANGLE(do_shift)(buffer, N + 1);
