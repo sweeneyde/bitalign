@@ -10,7 +10,7 @@ from bitalign import (
 )
 
 def make_cases(bits):
-    b = getrandbits(bits).to_bytes('big')
+    b = getrandbits(bits).to_bytes(bits // 8, 'big')
     return [array(code, b) for code in 'BHIQ']
 
 def main(outer_loops=50, inner_loops=50, bits=2048):
