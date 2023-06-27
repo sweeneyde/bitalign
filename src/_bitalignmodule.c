@@ -2,64 +2,16 @@
 #include <Python.h>
 #include "./_bitalign.h"
 
-typedef struct {
-    void *freeblock;
-    size_t size;
-} bitalign_module_state;
-
-
-static void *
-allocate_buffer(bitalign_module_state *state, size_t size)
-{
-    void *block = state->freeblock;
-    if (block != NULL && state->size == size) {
-        state->freeblock = NULL;
-        return block;
-    }
-    return PyMem_Malloc(size);
-}
-
-static void
-free_buffer(bitalign_module_state *state, void *block, size_t size)
-{
-    if (block == NULL) {
-        return;
-    }
-    void *oldblock = state->freeblock;
-    state->freeblock = block;
-    state->size = size;
-    if (oldblock) {
-        PyMem_Free(oldblock);
-    }
-}
-
-static int
-bitalign_clear(PyObject *module)
-{
-    bitalign_module_state *state = PyModule_GetState(module);
-    assert(state != NULL);
-    void *block = state->freeblock;
-    if (block) {
-        state->freeblock = NULL;
-        PyMem_Free(block);
-    }
-    return 0;
-}
-
 static PyObject*
 to_pair(struct bitalign_result res)
 {
     return Py_BuildValue("(ii)", res.shift_by, res.common_bits);
 }
 
-typedef struct bitalign_result (*implfunc)(void *, void *, int, void *);
-
 static PyObject *
 bitalign_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                 int itemsize, implfunc func)
 {
-    bitalign_module_state *state = PyModule_GetState(self);
-    assert(state != NULL);
     if (nargs != 2) {
         PyErr_SetString(PyExc_TypeError,
                         "bitalign_#_xxx expected 2 arguments.");
@@ -94,7 +46,7 @@ bitalign_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         return NULL;
     }
     int N = (int)(a.len / itemsize);
-    void *buffer = allocate_buffer(state, (N + 1) * itemsize);
+    void *buffer = PyMem_Malloc((N + 1) * itemsize);
     if (buffer == NULL) {
         PyBuffer_Release(&a);
         PyBuffer_Release(&b);
@@ -103,7 +55,7 @@ bitalign_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     struct bitalign_result res = func(a.buf, b.buf, N, buffer);
     PyBuffer_Release(&a);
     PyBuffer_Release(&b);
-    free_buffer(state, buffer, (N + 1) * itemsize);
+    PyMem_Free(buffer);
     return to_pair(res);
 }
 
@@ -164,8 +116,6 @@ bitalign_64_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
                            sizeof(uint64_t), bitalign_impl_64msb);
 }
 
-typedef void (*implfunc_multi)(void *, void *, size_t, int, void *, struct bitalign_result *);
-
 static PyObject *
 bitalign_multi_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                       int itemsize, implfunc_multi func)
@@ -180,8 +130,6 @@ bitalign_multi_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     struct bitalign_result *result_buffer = NULL;
     PyObject *result_list = NULL;
 
-    bitalign_module_state *state = PyModule_GetState(self);
-    assert(state != NULL);
     if (nargs != 2) {
         PyErr_SetString(PyExc_TypeError,
                         "bitalign_#_xxx_multi expected 2 arguments.");
@@ -238,7 +186,7 @@ bitalign_multi_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         b_bufs[num_pybuffers] = last->buf;
     }
     int N = (int)(a.len / itemsize);
-    work_buffer = allocate_buffer(state, (N + 1) * itemsize);
+    work_buffer = PyMem_Malloc((N + 1) * itemsize);
     if (work_buffer == NULL) {
         goto done;
     }
@@ -264,7 +212,7 @@ done:
     Py_XDECREF(result_list);
     PyMem_Free(b_bufs);
     PyMem_Free(result_buffer);
-    free_buffer(state, work_buffer, (N + 1) * itemsize);
+    PyMem_Free(work_buffer);
     if (pybuffers) {
         for (int k = num_pybuffers - 1; k >= 0; k--) {
             PyBuffer_Release(&pybuffers[k]);
@@ -339,7 +287,7 @@ bitalign_free(void *module)
 }
 
 PyDoc_STRVAR(bitalign_doc,"\
-bitalign_#_???(arr1, arr2) --> (shift_by, num_common_bits);\n\
+bitalign_#_?sb(arr1, arr2) --> (shift_by, num_common_bits);\n\
 \n\
 Return a tuple (x, y) such that when arr1 is shifted by x bits,\n\
 the number of bits in common between arr1 and arr2 is y.\n\
@@ -361,7 +309,9 @@ that must be in each array entry.  'lsb'/'msb' indicates whether the\n\
 0th bit of each logical bit-array is to be stored in the least or most\n\
 significant bit of arr[0].\n\
 \n\
-If more than one shift is optimal, the negative-most shift is used.\
+If more than one shift is optimal, the negative-most shift is used.\n\
+If there are no bits in common (i.e., all zeros with all ones),\n\
+then (-num_bits, 0) is returned.\
 ");
 
 static PyMethodDef bitalign_methods[] = {
@@ -384,16 +334,10 @@ static PyMethodDef bitalign_methods[] = {
     {NULL, NULL}
 };
 
-PyDoc_STRVAR(module_doc, "some kind of module");
-
 static struct PyModuleDef _bitalignmodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "bitalign",
-    .m_doc = module_doc,
-    .m_size = sizeof(bitalign_module_state),
+    .m_name = "_bitalign",
     .m_methods = bitalign_methods,
-    .m_clear = bitalign_clear,
-    .m_free = bitalign_free,
 };
 
 PyMODINIT_FUNC

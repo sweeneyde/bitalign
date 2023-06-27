@@ -6,30 +6,26 @@ struct bitalign_result {
     int common_bits;
 };
 
-struct bitalign_result
-bitalign_impl_8lsb(const uint8_t*, const uint8_t*, int N, uint8_t*);
-struct bitalign_result
-bitalign_impl_16lsb(const uint16_t*, const uint16_t*, int N, uint16_t*);
-struct bitalign_result
-bitalign_impl_32lsb(const uint32_t*, const uint32_t*, int N, uint32_t*);
-struct bitalign_result
-bitalign_impl_64lsb(const uint64_t*, const uint64_t*, int N, uint64_t*);
+typedef struct bitalign_result (*implfunc)(void *, void *, int, void *);
 
-struct bitalign_result
-bitalign_impl_8msb(const uint8_t*, const uint8_t*, int N, uint8_t*);
-struct bitalign_result
-bitalign_impl_16msb(const uint16_t*, const uint16_t*, int N, uint16_t*);
-struct bitalign_result
-bitalign_impl_32msb(const uint32_t*, const uint32_t*, int N, uint32_t*);
-struct bitalign_result
-bitalign_impl_64msb(const uint64_t*, const uint64_t*, int N, uint64_t*);
+struct bitalign_result bitalign_impl_8lsb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_16lsb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_32lsb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_64lsb(void *, void *, int, void *);
 
-void bitalign_multi_impl_8lsb(const uint8_t*, const uint8_t**, size_t M, int N, uint8_t*, struct bitalign_result *);
-void bitalign_multi_impl_16lsb(const uint16_t*, const uint16_t**, size_t M, int N, uint16_t*, struct bitalign_result *);
-void bitalign_multi_impl_32lsb(const uint32_t*, const uint32_t**, size_t M, int N, uint32_t*, struct bitalign_result *);
-void bitalign_multi_impl_64lsb(const uint64_t*, const uint64_t**, size_t M, int N, uint64_t*, struct bitalign_result *);
+struct bitalign_result bitalign_impl_8msb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_16msb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_32msb(void *, void *, int, void *);
+struct bitalign_result bitalign_impl_64msb(void *, void *, int, void *);
 
-void bitalign_multi_impl_8msb(const uint8_t*, const uint8_t**, size_t M, int N, uint8_t*, struct bitalign_result *);
-void bitalign_multi_impl_16msb(const uint16_t*, const uint16_t**, size_t M, int N, uint16_t*, struct bitalign_result *);
-void bitalign_multi_impl_32msb(const uint32_t*, const uint32_t**, size_t M, int N, uint32_t*, struct bitalign_result *);
-void bitalign_multi_impl_64msb(const uint64_t*, const uint64_t**, size_t M, int N, uint64_t*, struct bitalign_result *);
+typedef void (*implfunc_multi)(void *, void *, size_t, int, void *, struct bitalign_result *);
+
+void bitalign_multi_impl_8lsb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_16lsb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_32lsb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_64lsb(void *, void *, size_t, int, void *, void *);
+
+void bitalign_multi_impl_8msb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_16msb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_32msb(void *, void *, size_t, int, void *, void *);
+void bitalign_multi_impl_64msb(void *, void *, size_t, int, void *, void *);
