@@ -157,42 +157,12 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
     assert(N < INT_MAX / BA_WORD_BIT / 2);
     memcpy(buffer, a, N * sizeof(BA_WORD));
     buffer[N] = 0;
-    {
-        // Iteration 0: No bit-shifts yet. Buffer has N words.
-        for (size_t j = 0; j < M; j++) {
-            int overlap = N * BA_WORD_BIT;
-            const BA_WORD *b = bs[j];
-            for (int b_start = 0; b_start < N; b_start++, overlap -= BA_WORD_BIT) {
-                if (overlap < res[j].common_bits) {
-                    break;
-                }
-                // compare buffer[0:N-b_start] to b[b_start:N]
-                int bi = b_start, ai = 0;
-                int common = overlap;
-                for (; bi < N; ai++, bi++) {
-                    common -= POPCNT(buffer[ai] ^ b[bi]);
-                }
-                UPDATE_JTH_RESULT(j, common, BA_WORD_BIT * b_start);
-            }
-            overlap = (N - 1) * BA_WORD_BIT;
-            for (int a_start = 1; a_start < N; a_start++, overlap -= BA_WORD_BIT) {
-                if (overlap < res[j].common_bits) {
-                    break;
-                }
-                // compare buffer[a_start:N] to b[0:N-a_start]
-                int ai = a_start, bi = 0;
-                int common = overlap;
-                for (; ai < N; ai++, bi++) {
-                    common -= POPCNT(buffer[ai] ^ b[bi]);
-                }
-                UPDATE_JTH_RESULT(j, common, (-BA_WORD_BIT) * a_start);
-            }
-        }
-    }
     // Remaining Iterations: now buffer has N+1 words.
     // buffer[0] and buffer[N] are only partial words.
-    for (int iteration = 1; iteration < BA_WORD_BIT; iteration++) {
-        MANGLE(do_shift)(buffer, N + 1);
+    for (int iteration = 0; iteration < BA_WORD_BIT; iteration++) {
+        if (iteration > 0) {
+            MANGLE(do_shift)(buffer, N + 1);
+        }
         for (size_t j = 0; j < M; j++) {
             const BA_WORD *b = bs[j];
             BA_WORD a0mask = SHIFT_FORWARD(BA_WORD_MAX, iteration);
