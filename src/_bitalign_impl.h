@@ -101,10 +101,22 @@ MANGLE(bitalign_impl)(void *avoid, void *bvoid, int N, void *buffervoid)
             common -= POPCNT(a0mask & (buffer[0] ^ b[b_start]));
             // now the rest: buffer[1:N-b_start] to b[b_start+1:N]
             int ai = 1, bi = b_start + 1;
-            for (; bi < N; ai++, bi++) {
-                common -= POPCNT(buffer[ai] ^ b[bi]);
+            int Nfloor = bi + ((N - bi) & ~3);
+            while (bi < Nfloor) {
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                if (common < res.common_bits) {
+                    goto next_b_start;
+                }
+            }
+            while (bi < N) {
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
             }
             UPDATE_RESULT(common, (BA_WORD_BIT) * b_start + iteration);
+          next_b_start:
+            ;
         }
         BA_WORD aNmask = (BA_WORD)~a0mask;
         overlap = (N - 1) * BA_WORD_BIT + iteration;
@@ -118,10 +130,22 @@ MANGLE(bitalign_impl)(void *avoid, void *bvoid, int N, void *buffervoid)
             common -= POPCNT(aNmask & (b[N-a_start] ^ buffer[N]));
             // now the rest: buffer[a_start:N+1] with b[0:N+1-a_start]
             int ai = a_start, bi = 0;
-            for (; ai < N; ai++, bi++) {
-                common -= POPCNT(buffer[ai] ^ b[bi]);
+            int Nfloor = ai + ((N - ai) & ~3);
+            while (ai < Nfloor) {
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
+                if (common < res.common_bits) {
+                    goto next_a_start;
+                }
+            }
+            while (ai < N) {
+                common -= POPCNT(buffer[ai++] ^ b[bi++]);
             }
             UPDATE_RESULT(common, (-BA_WORD_BIT) * a_start + iteration);
+          next_a_start:
+            ;
         }
     }
     return res;
