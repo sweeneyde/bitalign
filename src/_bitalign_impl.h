@@ -90,7 +90,7 @@ MANGLE(bitalign_impl)(void *avoid, void *bvoid, int N, void *buffervoid)
             MANGLE(do_shift)(buffer, N + 1);
         }
         BA_WORD a0mask = SHIFT_FORWARD(BA_WORD_MAX, iteration);
-        int overlap = (N - 1) * BA_WORD_BIT + BA_WORD_BIT - iteration;
+        int overlap = N * BA_WORD_BIT - iteration;
         for (int b_start = 0; b_start < N; b_start++, overlap -= BA_WORD_BIT) {
             if (overlap < res.common_bits) {
                 break;
