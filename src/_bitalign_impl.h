@@ -129,17 +129,6 @@ MANGLE(bitalign_impl)(void *avoid, void *bvoid, int N, void *buffervoid)
 
 #undef UPDATE_RESULT
 
-
-#define UPDATE_JTH_RESULT(j, COMMON, SHIFT) do {                         \
-    if ((COMMON) >= res[j].common_bits) {                                \
-        int _shift = (SHIFT);                                            \
-        if ((COMMON) > res[j].common_bits || _shift < res[j].shift_by) { \
-            res[j].common_bits = (COMMON);                               \
-            res[j].shift_by = _shift;                                    \
-        }                                                                \
-    }                                                                    \
-} while (0)
-
 void
 MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N, 
                             void *buffervoid, struct bitalign_result *res)
@@ -178,7 +167,13 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
                 for (; bi < N; ai++, bi++) {
                     common -= POPCNT(buffer[ai] ^ b[bi]);
                 }
-                UPDATE_JTH_RESULT(j, common, (BA_WORD_BIT) * b_start + iteration);
+                if (common >= res[j].common_bits) {
+                    int _shift = BA_WORD_BIT * b_start + iteration;
+                    if (common > res[j].common_bits || _shift < res[j].shift_by) {
+                        res[j].common_bits = common;
+                        res[j].shift_by = _shift;
+                    }
+                }
             }
             BA_WORD aNmask = (BA_WORD)~a0mask;
             overlap = (N - 1) * BA_WORD_BIT + iteration;
@@ -195,7 +190,13 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
                 for (; ai < N; ai++, bi++) {
                     common -= POPCNT(buffer[ai] ^ b[bi]);
                 }
-                UPDATE_JTH_RESULT(j, common, (-BA_WORD_BIT) * a_start + iteration);
+                if (common >= res[j].common_bits) {
+                    int _shift = -BA_WORD_BIT * a_start + iteration;
+                    if (common > res[j].common_bits || _shift < res[j].shift_by) {
+                        res[j].common_bits = common;
+                        res[j].shift_by = _shift;
+                    }
+                }
             }
         }
     }
