@@ -9,7 +9,7 @@ on:
 
 jobs:
   python_test:
-    name "Run Python Tests"
+    name: "Run Python Tests"
     runs-on: ubuntu-latest
     strategy:
       matrix:
