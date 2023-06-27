@@ -8,7 +8,8 @@ on:
       - main
 
 jobs:
-  build:
+  python_test:
+    name "Run Python Tests"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,6 +22,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Build
-        run: python -m pip install ./
+        run: python -m pip install ./ -v
       - name: Run Python tests
         run: python -m bitalign.tests -v
+      - name: Run Benchmark
+        run: python -m bitalign.benchmark
