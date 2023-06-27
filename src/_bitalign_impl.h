@@ -157,8 +157,6 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
     assert(N < INT_MAX / BA_WORD_BIT / 2);
     memcpy(buffer, a, N * sizeof(BA_WORD));
     buffer[N] = 0;
-    // Remaining Iterations: now buffer has N+1 words.
-    // buffer[0] and buffer[N] are only partial words.
     for (int iteration = 0; iteration < BA_WORD_BIT; iteration++) {
         if (iteration > 0) {
             MANGLE(do_shift)(buffer, N + 1);

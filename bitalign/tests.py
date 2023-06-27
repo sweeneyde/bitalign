@@ -81,7 +81,7 @@ class BitAlignTest(unittest.TestCase):
                 bytes([0b0000_0000, 0b0000_0000]),
             ]
         )
-        self.assertEqual(res, [(0, 16), (-4, 12), (-8, 8), (-12, 4), (-15, 0)])
+        self.assertEqual(res, [(0, 16), (-4, 12), (-8, 8), (-12, 4), (-16, 0)])
         self.assertEqual(bitalign_multi_8_msb(b'ABC', []), [])
 
     def reference_algorithm(self, A, B):
