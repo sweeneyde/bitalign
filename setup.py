@@ -2,7 +2,7 @@ from setuptools import Extension, setup
 
 setup(
     name='bitalign',
-    version='0.3.0',
+    version='0.4.0',
     author="Dennis Sweeney",
     author_email="sweeney.427@osu.edu",
     url="https://github.com/sweeneyde/bitalign",
