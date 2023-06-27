@@ -2,8 +2,6 @@
 #include <Python.h>
 #include "./_bitalign.h"
 
-typedef struct bitalign_result (*implfunc)(void *, void *, int, void *);
-
 static PyObject *
 bitalign_helper(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                 int itemsize, implfunc func)
@@ -109,12 +107,6 @@ bitalign_64_msb(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     return bitalign_helper(self, args, nargs,
                            sizeof(uint64_t), bitalign_impl_64msb);
-}
-
-static void
-bitalign_free(void *module)
-{
-    (void)bitalign_clear((PyObject *)module);
 }
 
 PyDoc_STRVAR(bitalign_doc,"\
