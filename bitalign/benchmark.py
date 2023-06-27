@@ -1,5 +1,5 @@
 from array import array
-from random import randbytes
+from random import getrandbits
 from time import perf_counter as now
 
 from bitalign import (
@@ -10,7 +10,7 @@ from bitalign import (
 )
 
 def make_cases(bits):
-    b = randbytes(bits // 8)
+    b = getrandbits(bits).to_bytes('big')
     return [array(code, b) for code in 'BHIQ']
 
 def main(outer_loops=50, inner_loops=50, bits=2048):
