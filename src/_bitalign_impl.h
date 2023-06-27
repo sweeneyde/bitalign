@@ -150,12 +150,16 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
         if (iteration > 0) {
             MANGLE(do_shift)(buffer, N + 1);
         }
+        BA_WORD a0mask = SHIFT_FORWARD(BA_WORD_MAX, iteration);
+        BA_WORD aNmask = (BA_WORD)~a0mask;
+
         for (size_t j = 0; j < M; j++) {
             const BA_WORD *b = bs[j];
-            BA_WORD a0mask = SHIFT_FORWARD(BA_WORD_MAX, iteration);
-            int overlap = (N - 1) * BA_WORD_BIT + BA_WORD_BIT - iteration;
+            int res_j_common_bits = res[j].common_bits;
+            int res_j_shift_by = res[j].shift_by;
+            int overlap = N * BA_WORD_BIT - iteration;
             for (int b_start = 0; b_start < N; b_start++, overlap -= BA_WORD_BIT) {
-                if (overlap < res[j].common_bits) {
+                if (overlap < res_j_common_bits) {
                     break;
                 }
                 // compare buffer[0:N-b_start] to b[b_start:N]
@@ -167,18 +171,17 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
                 for (; bi < N; ai++, bi++) {
                     common -= POPCNT(buffer[ai] ^ b[bi]);
                 }
-                if (common >= res[j].common_bits) {
+                if (common >= res_j_common_bits) {
                     int _shift = BA_WORD_BIT * b_start + iteration;
-                    if (common > res[j].common_bits || _shift < res[j].shift_by) {
-                        res[j].common_bits = common;
-                        res[j].shift_by = _shift;
+                    if (common > res_j_common_bits || _shift < res_j_shift_by) {
+                        res_j_common_bits = common;
+                        res_j_shift_by = _shift;
                     }
                 }
             }
-            BA_WORD aNmask = (BA_WORD)~a0mask;
             overlap = (N - 1) * BA_WORD_BIT + iteration;
             for (int a_start = 1; a_start <= N; a_start++, overlap -= BA_WORD_BIT) {
-                if (overlap < res[j].common_bits) {
+                if (overlap < res_j_common_bits) {
                     break;
                 }
                 // only compare buffer[a_start:N] to b[0:N-a_start]
@@ -190,14 +193,16 @@ MANGLE(bitalign_multi_impl)(void *avoid, void *bsvoid, size_t M, int N,
                 for (; ai < N; ai++, bi++) {
                     common -= POPCNT(buffer[ai] ^ b[bi]);
                 }
-                if (common >= res[j].common_bits) {
-                    int _shift = -BA_WORD_BIT * a_start + iteration;
-                    if (common > res[j].common_bits || _shift < res[j].shift_by) {
-                        res[j].common_bits = common;
-                        res[j].shift_by = _shift;
+                if (common >= res_j_common_bits) {
+                    int _shift = (-BA_WORD_BIT) * a_start + iteration;
+                    if (common > res_j_common_bits || _shift < res_j_shift_by) {
+                        res_j_common_bits = common;
+                        res_j_shift_by = _shift;
                     }
                 }
             }
+            res[j].common_bits = res_j_common_bits;
+            res[j].shift_by = res_j_shift_by;
         }
     }
 }
