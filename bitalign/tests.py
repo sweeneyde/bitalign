@@ -13,6 +13,14 @@ from bitalign import (
     bitalign_16_msb,
     bitalign_32_msb,
     bitalign_64_msb,
+    bitalign_multi_8_lsb,
+    bitalign_multi_16_lsb,
+    bitalign_multi_32_lsb,
+    bitalign_multi_64_lsb,
+    bitalign_multi_8_msb,
+    bitalign_multi_16_msb,
+    bitalign_multi_32_msb,
+    bitalign_multi_64_msb,
 )
 
 
@@ -61,6 +69,20 @@ class BitAlignTest(unittest.TestCase):
         (x, y) = bitalign_16_msb(array.array('H', [0xffff, 0x0000]),
                                  array.array('H', [0x0000, 0xffff]))
         self.assertEqual((x, y), (-16, 16))
+
+    def test_basic_8_msb_multi(self):
+        res = bitalign_multi_8_msb(
+            bytes([0b1111_1111, 0b1111_1111]),
+            [
+                bytes([0b1111_1111, 0b1111_1111]),
+                bytes([0b1111_1111, 0b1111_0000]),
+                bytes([0b1111_1111, 0b0000_0000]),
+                bytes([0b1111_0000, 0b0000_0000]),
+                bytes([0b0000_0000, 0b0000_0000]),
+            ]
+        )
+        self.assertEqual(res, [(0, 16), (-4, 12), (-8, 8), (-12, 4), (-16, 0)])
+        self.assertEqual(bitalign_multi_8_msb(b'ABC', []), [])
 
     def reference_algorithm(self, A, B):
         N = len(A)
@@ -120,6 +142,14 @@ class BitAlignTest(unittest.TestCase):
             res2 = bitalign_8_msb(self.string_to_array(string1, 8, 'msb'),
                                   self.string_to_array(string2, 8, 'msb'))
             self.assertEqual(res2, ref)
+        with self.subTest(string1=string1, string2=string2, o='lsb/multi'):
+            res3 = bitalign_multi_8_lsb(self.string_to_array(string1, 8, 'lsb'),
+                                        [self.string_to_array(string2, 8, 'lsb')]*2)
+            self.assertEqual(res3, [ref, ref])
+        with self.subTest(string1=string1, string2=string2, o='msb/multi'):
+            res4 = bitalign_multi_8_msb(self.string_to_array(string1, 8, 'msb'),
+                                        [self.string_to_array(string2, 8, 'msb')]*2)
+            self.assertEqual(res4, [ref, ref])
 
     def check_16bit(self, string1, string2):
         ref = self.reference_algorithm(string1, string2)
@@ -131,6 +161,14 @@ class BitAlignTest(unittest.TestCase):
             res2 = bitalign_16_msb(self.string_to_array(string1, 16, 'msb'),
                                    self.string_to_array(string2, 16, 'msb'))
             self.assertEqual(res2, ref)
+        with self.subTest(string1=string1, string2=string2, o='lsb/multi'):
+            res3 = bitalign_multi_16_lsb(self.string_to_array(string1, 16, 'lsb'),
+                                        [self.string_to_array(string2, 16, 'lsb')]*2)
+            self.assertEqual(res3, [ref, ref])
+        with self.subTest(string1=string1, string2=string2, o='msb/multi'):
+            res4 = bitalign_multi_16_msb(self.string_to_array(string1, 16, 'msb'),
+                                        [self.string_to_array(string2, 16, 'msb')]*2)
+            self.assertEqual(res4, [ref, ref])
 
     def check_32bit(self, string1, string2):
         ref = self.reference_algorithm(string1, string2)
@@ -142,6 +180,14 @@ class BitAlignTest(unittest.TestCase):
             res2 = bitalign_32_msb(self.string_to_array(string1, 32, 'msb'),
                                    self.string_to_array(string2, 32, 'msb'))
             self.assertEqual(res2, ref)
+        with self.subTest(string1=string1, string2=string2, o='lsb/multi'):
+            res3 = bitalign_multi_32_lsb(self.string_to_array(string1, 32, 'lsb'),
+                                        [self.string_to_array(string2, 32, 'lsb')]*2)
+            self.assertEqual(res3, [ref, ref])
+        with self.subTest(string1=string1, string2=string2, o='msb/multi'):
+            res4 = bitalign_multi_32_msb(self.string_to_array(string1, 32, 'msb'),
+                                        [self.string_to_array(string2, 32, 'msb')]*2)
+            self.assertEqual(res4, [ref, ref])
 
     def check_64bit(self, string1, string2):
         ref = self.reference_algorithm(string1, string2)
@@ -153,6 +199,14 @@ class BitAlignTest(unittest.TestCase):
             res2 = bitalign_64_msb(self.string_to_array(string1, 64, 'msb'),
                                    self.string_to_array(string2, 64, 'msb'))
             self.assertEqual(res2, ref)
+        with self.subTest(string1=string1, string2=string2, o='lsb/multi'):
+            res3 = bitalign_multi_64_lsb(self.string_to_array(string1, 64, 'lsb'),
+                                        [self.string_to_array(string2, 64, 'lsb')]*2)
+            self.assertEqual(res3, [ref, ref])
+        with self.subTest(string1=string1, string2=string2, o='msb/multi'):
+            res4 = bitalign_multi_64_msb(self.string_to_array(string1, 64, 'msb'),
+                                        [self.string_to_array(string2, 64, 'msb')]*2)
+            self.assertEqual(res4, [ref, ref])
 
     CASES = [
         "0"*192,
@@ -242,6 +296,45 @@ class BitAlignTest(unittest.TestCase):
             for N in (64, 128, 192, 256):
                 s1, s2 = self.randstring(N), self.randstring(N)
                 self.check_all(s1, s2)
+
+    def check_all_multi(self, string1, strings2):
+        s2a = self.string_to_array
+        a = s2a(string1, 8, 'lsb')
+        msg = (string1, strings2)
+        ref = [bitalign_8_lsb(a, s2a(y, 8, 'lsb')) for y in strings2]
+        # Check that "multi" functions are equivalent to the comprehension
+        res1 = bitalign_multi_8_lsb(s2a(string1, 8, 'lsb'),
+                                    [s2a(y, 8, 'lsb') for y in strings2])
+        self.assertEqual(res1, ref, msg)
+        res2 = bitalign_multi_16_lsb(s2a(string1, 16, 'lsb'),
+                                     [s2a(y, 16, 'lsb') for y in strings2])
+        self.assertEqual(res2, ref, msg)
+        res3 = bitalign_multi_32_lsb(s2a(string1, 32, 'lsb'),
+                                     [s2a(y, 32, 'lsb') for y in strings2])
+        self.assertEqual(res3, ref, msg)
+        res4 = bitalign_multi_64_lsb(s2a(string1, 64, 'lsb'),
+                                     [s2a(y, 64, 'lsb') for y in strings2])
+        self.assertEqual(res4, ref, msg)
+
+        res1 = bitalign_multi_8_msb(s2a(string1, 8, 'msb'),
+                                    [s2a(y, 8, 'msb') for y in strings2])
+        self.assertEqual(res1, ref, msg)
+        res2 = bitalign_multi_16_msb(s2a(string1, 16, 'msb'),
+                                     [s2a(y, 16, 'msb') for y in strings2])
+        self.assertEqual(res2, ref, msg)
+        res3 = bitalign_multi_32_msb(s2a(string1, 32, 'msb'),
+                                     [s2a(y, 32, 'msb') for y in strings2])
+        self.assertEqual(res3, ref, msg)
+        res4 = bitalign_multi_64_msb(s2a(string1, 64, 'msb'),
+                                     [s2a(y, 64, 'msb') for y in strings2])
+        self.assertEqual(res4, ref, msg)
+
+    def test_random_all_multi(self):
+        for _ in range(500):
+            for N in (64, 128, 192, 256):
+                s1 = self.randstring(N)
+                s2 = [self.randstring(N) for _ in range(10)]
+                self.check_all_multi(s1, s2)
 
 
 FUNCS_AND_ARGS = [
